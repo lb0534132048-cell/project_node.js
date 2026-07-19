@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const courses = [
+let courses = [
     {
         id: 1,
         name: 'מבוא ל-Node.js',
@@ -49,12 +49,136 @@ const courses = [
     }
 ];
 
+// איתור ה-ID הבא
+function getNextId() {
+    return courses.length > 0
+        ? Math.max(...courses.map(c => c.id)) + 1
+        : 1;
+}
+
+// ▸ READ — כל הקורסים
 router.get('/', (req, res) => {
     res.json({
         success: true,
         count: courses.length,
         data: courses
     });
+});
+
+// ▸ READ — קורס בודד
+router.get('/:id', (req, res) => {
+    const id = +req.params.id;
+
+    if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ error: 'מזהה לא תקין' });
+    }
+
+    const course = courses.find(c => c.id === id);
+
+    if (!course) {
+        return res.status(404).json({ error: 'הקורס לא נמצא' });
+    }
+
+    res.json({ success: true, data: course });
+});
+
+// ▸ CREATE — קורס חדש
+router.post('/', (req, res) => {
+    const { name, description, duration, level, price, teacher } = req.body;
+    // מניעת שליחת ID ידני
+    if (req.body.id !== undefined) {
+        return res.status(400).json({ error: 'אין לשלוח ID ביצירה — הוא נוצר אוטומטית' });
+    }
+
+    // ולידציה
+    if (!name || !description || !duration || !level || !price || !teacher) {
+        return res.status(400).json({
+            error: 'חסרים שדות חובה',
+            required: ['name', 'description', 'duration', 'level', 'price', 'teacher']
+        });
+    }
+
+    if (name.length < 2 || name.length > 100) {
+        return res.status(400).json({ error: 'שם הקורס חייב להיות בין 2 ל-100 תווים' });
+    }
+
+    if (typeof price !== 'number' || price <= 0) {
+        return res.status(400).json({ error: 'מחיר חייב להיות מספר חיובי' });
+    }
+
+    const newCourse = {
+        id: getNextId(),
+        name,
+        description,
+        duration,
+        level,
+        price,
+        teacher
+    };
+
+    courses.push(newCourse);
+
+    res.status(201).json({ success: true, data: newCourse });
+});
+
+// ▸ UPDATE — עדכון קורס
+router.put('/:id', (req, res) => {
+    const id = +req.params.id;
+
+    if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ error: 'מזהה לא תקין' });
+    }
+
+    const course = courses.find(c => c.id === id);
+
+    if (!course) {
+        return res.status(404).json({ error: 'הקורס לא נמצא' });
+    }
+
+    const { name, description, duration, level, price, teacher } = req.body;
+
+    // ולידציה — כל השדות נדרשים בעדכון
+    if (!name || !description || !duration || !level || !price || !teacher) {
+        return res.status(400).json({
+            error: 'חסרים שדות חובה',
+            required: ['name', 'description', 'duration', 'level', 'price', 'teacher']
+        });
+    }
+    if (name.length < 2 || name.length > 100) {
+        return res.status(400).json({ error: 'שם הקורס חייב להיות בין 2 ל-100 תווים' });
+    }
+
+    if (typeof price !== 'number' || price <= 0) {
+        return res.status(400).json({ error: 'מחיר חייב להיות מספר חיובי' });
+    }
+
+    course.name = name;
+    course.description = description;
+    course.duration = duration;
+    course.level = level;
+    course.price = price;
+    course.teacher = teacher;
+
+    res.json({ success: true, data: course });
+});
+
+// ▸ DELETE — מחיקת קורס
+router.delete('/:id', (req, res) => {
+    const id = +req.params.id;
+
+    if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ error: 'מזהה לא תקין' });
+    }
+
+    const index = courses.findIndex(c => c.id === id);
+
+    if (index === -1) {
+        return res.status(404).json({ error: 'הקורס לא נמצא' });
+    }
+
+    courses.splice(index, 1);
+
+    res.json({ success: true, message: 'הקורס נמחק בהצלחה' });
 });
 
 module.exports = router;
