@@ -1,46 +1,58 @@
-const coursesService = require('../services/courses');
+// ============================================================
+// קונטרולר – סטודנטים
+// ============================================================
+
+const studentsService = require('../services/students');
 
 function getAll(req, res) {
-  const courses = coursesService.getAll();
-  res.json(courses);
+  res.status(200).json(studentsService.getAll());
 }
 
+// GET /students/:id – סטודנט בודד עם 404
 function getById(req, res) {
   try {
     const id = Number(req.params.id);
-    const course = coursesService.getById(id);
-    res.json(course);
+    res.status(200).json(studentsService.getById(id));
   } catch (err) {
-    res.status(404).json({ error: err.message });
+    if (err.message === 'STUDENT_NOT_FOUND') {
+      return res.status(404).json({ error: 'הסטודנט לא נמצא' });
+    }
+    res.status(500).json({ error: err.message });
   }
 }
 
 function create(req, res) {
   try {
-    const course = coursesService.create(req.body);
-    res.status(201).json(course);
+    res.status(201).json(studentsService.create(req.body));
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 }
 
+// PUT /students/:id – עדכון עם 404
 function update(req, res) {
   try {
     const id = Number(req.params.id);
-    const course = coursesService.update(id, req.body);
-    res.json(course);
+    res.status(200).json(studentsService.update(id, req.body));
   } catch (err) {
-    res.status(404).json({ error: err.message });
+    if (err.message === 'STUDENT_NOT_FOUND') {
+      return res.status(404).json({ error: 'הסטודנט לא נמצא' });
+    }
+    res.status(500).json({ error: err.message });
   }
 }
 
+// DELETE /students/:id – מחיקה עם 404
 function remove(req, res) {
   try {
     const id = Number(req.params.id);
-    coursesService.remove(id);
+    studentsService.remove(id);
     res.status(204).send();
   } catch (err) {
-    res.status(404).json({ error: err.message });
+    if (err.message === 'STUDENT_NOT_FOUND') {
+      return res.status(404).json({ error: 'הסטודנט לא נמצא' });
+    }
+    res.status(500).json({ error: err.message });
   }
 }
 
