@@ -2,6 +2,9 @@
 // שרת Express – נקודת הכניסה של האפליקציה
 // ============================================================
 
+// טוען את משתני הסביבה מקובץ .env אל process.env
+require('dotenv').config();
+
 const express = require('express');
 const app = express();
 
@@ -25,8 +28,9 @@ app.use('/students', require('./routes/students'));
 
 // ==========================================================
 // הפעלת השרת
+// הפורט נקרא ממשתני הסביבה, ואם לא הוגדר – ברירת מחדל 3000
 // ==========================================================
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`השרת רץ על http://localhost:${PORT}`);
 });
