@@ -1,38 +1,58 @@
 // ============================================================
 // שכבת הנתונים – סטודנטים
+// שומרת וקוראת את הנתונים מקובץ JSON באופן א-סינכרוני.
 // ============================================================
 
-const students = [
-  { id: 1, name: 'אברהם כהן', email: 'avi@example.com' },
-  { id: 2, name: 'יצחק לוי', email: 'yitz@example.com' }
-];
+const path = require('path');
+const createJsonFileStore = require('./jsonFileStore');
+
+const filePath = path.join(__dirname, 'students.json');
+const store = createJsonFileStore(filePath);
 
 function getAll() {
-  return students;
+  return store.runExclusive(store.read);
 }
 
 function getById(id) {
-  return students.find(s => s.id === id) || null;
+  return store.runExclusive(async () => {
+    const students = await store.read();
+    return students.find(student => student.id === id) || null;
+  });
 }
 
 function create(student) {
-  const newStudent = { id: students.length + 1, ...student };
-  students.push(newStudent);
-  return newStudent;
+  return store.runExclusive(async () => {
+    const students = await store.read();
+    const nextId = students.reduce((maxId, current) => Math.max(maxId, current.id), 0) + 1;
+    const newStudent = { ...student, id: nextId };
+    students.push(newStudent);
+    await store.write(students);
+    return newStudent;
+  });
 }
 
 function update(id, data) {
-  const student = students.find(s => s.id === id);
-  if (!student) return null;
-  Object.assign(student, data);
-  return student;
+  return store.runExclusive(async () => {
+    const students = await store.read();
+    const student = students.find(item => item.id === id);
+    if (!student) return null;
+
+    Object.assign(student, data, { id });
+    await store.write(students);
+    return student;
+  });
 }
 
 function remove(id) {
-  const index = students.findIndex(s => s.id === id);
-  if (index === -1) return false;
-  students.splice(index, 1);
-  return true;
+  return store.runExclusive(async () => {
+    const students = await store.read();
+    const index = students.findIndex(student => student.id === id);
+    if (index === -1) return false;
+
+    students.splice(index, 1);
+    await store.write(students);
+    return true;
+  });
 }
 
 module.exports = { getAll, getById, create, update, remove };

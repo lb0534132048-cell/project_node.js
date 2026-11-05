@@ -4,56 +4,51 @@
 
 const studentsService = require('../services/students');
 
+function handleError(res, err) {
+  if (err && err.message === 'STUDENT_NOT_FOUND') {
+    return res.status(404).json({ error: 'הסטודנט לא נמצא' });
+  }
+  if (err && err.message === 'INVALID_STUDENT_DATA') {
+    return res.status(400).json({ error: 'חסרים שדות חובה: name, email' });
+  }
+  console.error(err);
+  return res.status(500).json({ error: 'שגיאה פנימית בשרת' });
+}
+
 function getAll(req, res) {
-  res.status(200).json(studentsService.getAll());
+  studentsService.getAll()
+    .then(students => res.status(200).json(students))
+    .catch(err => handleError(res, err));
 }
 
 // GET /students/:id – סטודנט בודד עם 404
 function getById(req, res) {
-  try {
-    const id = Number(req.params.id);
-    res.status(200).json(studentsService.getById(id));
-  } catch (err) {
-    if (err.message === 'STUDENT_NOT_FOUND') {
-      return res.status(404).json({ error: 'הסטודנט לא נמצא' });
-    }
-    res.status(500).json({ error: err.message });
-  }
+  const id = Number(req.params.id);
+  studentsService.getById(id)
+    .then(student => res.status(200).json(student))
+    .catch(err => handleError(res, err));
 }
 
 function create(req, res) {
-  try {
-    res.status(201).json(studentsService.create(req.body));
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  studentsService.create(req.body)
+    .then(student => res.status(201).json(student))
+    .catch(err => handleError(res, err));
 }
 
 // PUT /students/:id – עדכון עם 404
 function update(req, res) {
-  try {
-    const id = Number(req.params.id);
-    res.status(200).json(studentsService.update(id, req.body));
-  } catch (err) {
-    if (err.message === 'STUDENT_NOT_FOUND') {
-      return res.status(404).json({ error: 'הסטודנט לא נמצא' });
-    }
-    res.status(500).json({ error: err.message });
-  }
+  const id = Number(req.params.id);
+  studentsService.update(id, req.body)
+    .then(student => res.status(200).json(student))
+    .catch(err => handleError(res, err));
 }
 
 // DELETE /students/:id – מחיקה עם 404
 function remove(req, res) {
-  try {
-    const id = Number(req.params.id);
-    studentsService.remove(id);
-    res.status(204).send();
-  } catch (err) {
-    if (err.message === 'STUDENT_NOT_FOUND') {
-      return res.status(404).json({ error: 'הסטודנט לא נמצא' });
-    }
-    res.status(500).json({ error: err.message });
-  }
+  const id = Number(req.params.id);
+  studentsService.remove(id)
+    .then(() => res.status(204).send())
+    .catch(err => handleError(res, err));
 }
 
 module.exports = { getAll, getById, create, update, remove };

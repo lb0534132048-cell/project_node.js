@@ -1,75 +1,57 @@
 // ============================================================
 // קונטרולר – קורסים
 // מתרגם HTTP ←→ Service.
-// מחלץ נתונים מ-req, קורא ל-Service, מחזיר res.
 // ============================================================
 
 const coursesService = require('../services/courses');
 
-// GET /courses – החזרת כל הקורסים
-function getAll(req, res) {
-  const courses = coursesService.getAll();   // קורא ל-service
-  res.status(200).json(courses);             // 200 + הגוף
+function handleError(res, err) {
+  if (err && err.message === 'COURSE_NOT_FOUND') {
+    return res.status(404).json({ error: 'הקורס לא נמצא' });
+  }
+  if (err && err.message === 'INVALID_COURSE_DATA') {
+    return res.status(400).json({ error: 'חסרים שדות חובה: name, hours' });
+  }
+  console.error(err);
+  return res.status(500).json({ error: 'שגיאה פנימית בשרת' });
 }
 
-// ==========================================================
+// GET /courses – החזרת כל הקורסים
+function getAll(req, res) {
+  coursesService.getAll()
+    .then(courses => res.status(200).json(courses))
+    .catch(err => handleError(res, err));
+}
+
 // GET /courses/:id – קבלת קורס בודד
-// ==========================================================
 function getById(req, res) {
-  try {
-    const id = Number(req.params.id);         // המרה למספר
-    const course = coursesService.getById(id);
-    res.status(200).json(course);             // 200 – נמצא
-  } catch (err) {
-    // הקורס לא נמצא – 404
-    if (err.message === 'COURSE_NOT_FOUND') {
-      return res.status(404).json({ error: 'הקורס לא נמצא' });
-    }
-    // שגיאה לא צפויה – 500
-    res.status(500).json({ error: err.message });
-  }
+  const id = Number(req.params.id);
+  coursesService.getById(id)
+    .then(course => res.status(200).json(course))
+    .catch(err => handleError(res, err));
 }
 
 // POST /courses – יצירת קורס
 function create(req, res) {
-  try {
-    const course = coursesService.create(req.body);
-    res.status(201).json(course);             // 201 – נוצר
-  } catch (err) {
-    res.status(400).json({ error: err.message });  // 400 – שגיאת קלט
-  }
+  coursesService.create(req.body)
+    .then(course => res.status(201).json(course))
+    .catch(err => handleError(res, err));
 }
 
-// ==========================================================
 // PUT /courses/:id – עדכון קורס בודד
-// ==========================================================
 function update(req, res) {
-  try {
-    const id = Number(req.params.id);
-    const course = coursesService.update(id, req.body);
-    res.status(200).json(course);             // 200 – עודכן
-  } catch (err) {
-    if (err.message === 'COURSE_NOT_FOUND') {
-      return res.status(404).json({ error: 'הקורס לא נמצא' });
-    }
-    res.status(500).json({ error: err.message });
-  }
+  const id = Number(req.params.id);
+  coursesService.update(id, req.body)
+    .then(course => res.status(200).json(course))
+    .catch(err => handleError(res, err));
 }
 
-// ==========================================================
 // DELETE /courses/:id – מחיקת קורס בודד
-// ==========================================================
 function remove(req, res) {
-  try {
-    const id = Number(req.params.id);
-    coursesService.remove(id);
-    res.status(204).send();                   // 204 – נמחק, אין גוף
-  } catch (err) {
-    if (err.message === 'COURSE_NOT_FOUND') {
-      return res.status(404).json({ error: 'הקורס לא נמצא' });
-    }
-    res.status(500).json({ error: err.message });
-  }
+  const id = Number(req.params.id);
+  coursesService.remove(id)
+    .then(() => res.status(204).send())
+    .catch(err => handleError(res, err));
 }
 
 module.exports = { getAll, getById, create, update, remove };

@@ -1,5 +1,5 @@
 node_modules/
+data/*.tmp
 
 # משתני סביבה – מכילים סודות, לא נכנסים ל-git
 .env
-

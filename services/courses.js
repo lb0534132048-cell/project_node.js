@@ -7,15 +7,15 @@
 const coursesData = require('../data/courses');
 
 // החזרת כל הקורסים – אין בדיקות מיוחדות
-function getAll() {
+async function getAll() {
   return coursesData.getAll();
 }
 
 // ==========================================================
 // קבלת קורס בודד – עם בדיקה שהקורס קיים
 // ==========================================================
-function getById(id) {
-  const course = coursesData.getById(id);
+async function getById(id) {
+  const course = await coursesData.getById(id);
   if (!course) {
     // הקורס לא נמצא – זורקים שגיאה עם קוד מזהה
     throw new Error('COURSE_NOT_FOUND');
@@ -26,9 +26,9 @@ function getById(id) {
 // ==========================================================
 // יצירת קורס – בודק ששדות חובה קיימים
 // ==========================================================
-function create(data) {
-  if (!data.name || !data.hours) {
-    throw new Error('חסרים שדות חובה: name, hours');
+async function create(data) {
+  if (!data || !data.name || !data.hours) {
+    throw new Error('INVALID_COURSE_DATA');
   }
   return coursesData.create(data);
 }
@@ -36,8 +36,8 @@ function create(data) {
 // ==========================================================
 // עדכון קורס – בודק קיום לפני עדכון
 // ==========================================================
-function update(id, data) {
-  const course = coursesData.update(id, data);
+async function update(id, data) {
+  const course = await coursesData.update(id, data);
   if (!course) {
     throw new Error('COURSE_NOT_FOUND');
   }
@@ -47,8 +47,8 @@ function update(id, data) {
 // ==========================================================
 // מחיקת קורס – בודק קיום לפני מחיקה
 // ==========================================================
-function remove(id) {
-  const deleted = coursesData.remove(id);
+async function remove(id) {
+  const deleted = await coursesData.remove(id);
   if (!deleted) {
     throw new Error('COURSE_NOT_FOUND');
   }
