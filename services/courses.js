@@ -1,58 +1,72 @@
 // ============================================================
 // שכבת השירות – קורסים
 // אחראית על הלוגיקה העסקית ובדיקות תקינות.
-// זורקת שגיאות – הקונטרולר יתרגם אותן לקודי HTTP.
 // ============================================================
 
 const coursesData = require('../data/courses');
 
-// החזרת כל הקורסים – אין בדיקות מיוחדות
+function validateId(id) {
+  if (!Number.isSafeInteger(id) || id < 1) {
+    throw new Error('INVALID_ID');
+  }
+}
+
+function validateCourse(data, isCreate) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('INVALID_COURSE_DATA');
+  }
+
+  const keys = Object.keys(data);
+  if (
+    keys.length === 0 ||
+    keys.some(key => !['name', 'hours'].includes(key)) ||
+    (isCreate && (!Object.hasOwn(data, 'name') || !Object.hasOwn(data, 'hours')))
+  ) {
+    throw new Error('INVALID_COURSE_DATA');
+  }
+
+  const course = {};
+  if (Object.hasOwn(data, 'name')) {
+    if (typeof data.name !== 'string' || !data.name.trim()) {
+      throw new Error('INVALID_COURSE_DATA');
+    }
+    course.name = data.name.trim();
+  }
+  if (Object.hasOwn(data, 'hours')) {
+    if (typeof data.hours !== 'number' || !Number.isFinite(data.hours) || data.hours <= 0) {
+      throw new Error('INVALID_COURSE_DATA');
+    }
+    course.hours = data.hours;
+  }
+  return course;
+}
+
 async function getAll() {
   return coursesData.getAll();
 }
 
-// ==========================================================
-// קבלת קורס בודד – עם בדיקה שהקורס קיים
-// ==========================================================
 async function getById(id) {
+  validateId(id);
   const course = await coursesData.getById(id);
-  if (!course) {
-    // הקורס לא נמצא – זורקים שגיאה עם קוד מזהה
-    throw new Error('COURSE_NOT_FOUND');
-  }
+  if (!course) throw new Error('COURSE_NOT_FOUND');
   return course;
 }
 
-// ==========================================================
-// יצירת קורס – בודק ששדות חובה קיימים
-// ==========================================================
 async function create(data) {
-  if (!data || !data.name || !data.hours) {
-    throw new Error('INVALID_COURSE_DATA');
-  }
-  return coursesData.create(data);
+  return coursesData.create(validateCourse(data, true));
 }
 
-// ==========================================================
-// עדכון קורס – בודק קיום לפני עדכון
-// ==========================================================
 async function update(id, data) {
-  const course = await coursesData.update(id, data);
-  if (!course) {
-    throw new Error('COURSE_NOT_FOUND');
-  }
+  validateId(id);
+  const course = await coursesData.update(id, validateCourse(data, false));
+  if (!course) throw new Error('COURSE_NOT_FOUND');
   return course;
 }
 
-// ==========================================================
-// מחיקת קורס – בודק קיום לפני מחיקה
-// ==========================================================
 async function remove(id) {
+  validateId(id);
   const deleted = await coursesData.remove(id);
-  if (!deleted) {
-    throw new Error('COURSE_NOT_FOUND');
-  }
-  // מחזירים true לסימון הצלחה (הקונטרולר לא מחזיר גוף ב-204)
+  if (!deleted) throw new Error('COURSE_NOT_FOUND');
 }
 
 module.exports = { getAll, getById, create, update, remove };

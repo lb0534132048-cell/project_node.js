@@ -7,7 +7,37 @@ const path = require('path');
 const createJsonFileStore = require('./jsonFileStore');
 
 const filePath = path.join(__dirname, 'courses.json');
-const store = createJsonFileStore(filePath);
+
+function validateCourses(courses) {
+  if (!Array.isArray(courses)) {
+    throw new Error('Course data must be an array.');
+  }
+
+  const ids = new Set();
+  for (const course of courses) {
+    if (
+      !course ||
+      typeof course !== 'object' ||
+      Array.isArray(course) ||
+      !Number.isSafeInteger(course.id) ||
+      course.id < 1 ||
+      typeof course.name !== 'string' ||
+      !course.name.trim() ||
+      typeof course.hours !== 'number' ||
+      !Number.isFinite(course.hours) ||
+      course.hours <= 0 ||
+      Object.keys(course).some(key => !['id', 'name', 'hours'].includes(key)) ||
+      ids.has(course.id)
+    ) {
+      const error = new Error('Course data contains an invalid or duplicate course.');
+      error.code = 'INVALID_DATA_FILE';
+      throw error;
+    }
+    ids.add(course.id);
+  }
+}
+
+const store = createJsonFileStore(filePath, validateCourses);
 
 function getAll() {
   return store.runExclusive(store.read);

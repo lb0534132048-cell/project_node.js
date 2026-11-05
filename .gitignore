@@ -1,5 +1,6 @@
 node_modules/
 data/*.tmp
+data/*.lock
 
 # משתני סביבה – מכילים סודות, לא נכנסים ל-git
 .env

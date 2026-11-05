@@ -27,6 +27,27 @@ app.use('/courses', require('./routes/courses'));
 app.use('/students', require('./routes/students'));
 
 // ==========================================================
+// תשובת JSON אחידה לנתיבים לא קיימים ולשגיאות בבקשה
+// ==========================================================
+app.use((req, res) => {
+  res.status(404).json({ error: 'הנתיב לא נמצא.' });
+});
+
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'גוף הבקשה אינו JSON תקין.' });
+  }
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'גוף הבקשה גדול מדי.' });
+  }
+
+  console.error(err);
+  return res.status(500).json({ error: 'אירעה שגיאה פנימית בשרת.' });
+});
+
+// ==========================================================
 // הפעלת השרת
 // הפורט נקרא ממשתני הסביבה, ואם לא הוגדר – ברירת מחדל 3000
 // ==========================================================

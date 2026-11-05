@@ -7,7 +7,36 @@ const path = require('path');
 const createJsonFileStore = require('./jsonFileStore');
 
 const filePath = path.join(__dirname, 'students.json');
-const store = createJsonFileStore(filePath);
+
+function validateStudents(students) {
+  if (!Array.isArray(students)) {
+    throw new Error('Student data must be an array.');
+  }
+
+  const ids = new Set();
+  for (const student of students) {
+    if (
+      !student ||
+      typeof student !== 'object' ||
+      Array.isArray(student) ||
+      !Number.isSafeInteger(student.id) ||
+      student.id < 1 ||
+      typeof student.name !== 'string' ||
+      !student.name.trim() ||
+      typeof student.email !== 'string' ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(student.email) ||
+      Object.keys(student).some(key => !['id', 'name', 'email'].includes(key)) ||
+      ids.has(student.id)
+    ) {
+      const error = new Error('Student data contains an invalid or duplicate student.');
+      error.code = 'INVALID_DATA_FILE';
+      throw error;
+    }
+    ids.add(student.id);
+  }
+}
+
+const store = createJsonFileStore(filePath, validateStudents);
 
 function getAll() {
   return store.runExclusive(store.read);
